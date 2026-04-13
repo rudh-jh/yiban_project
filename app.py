@@ -91,6 +91,7 @@ def load_knowledge_base() -> list[dict]:
 
 
 KB = load_knowledge_base()
+MATCH_THRESHOLD = 5.0
 
 
 def extract_keywords(question: str) -> list[str]:
@@ -240,14 +241,24 @@ async def ask(request: Request):
             status_code=400,
         )
 
+    # item, score = search_knowledge(question, campus, stage)
+
+    # if not item or score < 3:
+    #     return {
+    #         "matched": False,
+    #         "message": "暂未找到完全匹配的校本知识，请换一种问法，或以学校最新通知为准。",
+    #         "score": round(score, 2),
+    #     }
     item, score = search_knowledge(question, campus, stage)
 
-    if not item or score < 3:
+    if not item or score < MATCH_THRESHOLD:
         return {
             "matched": False,
             "message": "暂未找到完全匹配的校本知识，请换一种问法，或以学校最新通知为准。",
             "score": round(score, 2),
         }
+
+
 
     return {
         "matched": True,

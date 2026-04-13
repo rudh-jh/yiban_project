@@ -4,6 +4,7 @@ import pandas as pd
 
 # 直接复用 app.py 里的检索函数
 from app import find_excel_file, search_knowledge
+MATCH_THRESHOLD = 5.0
 
 
 def norm(v: Any) -> str:
@@ -71,7 +72,8 @@ def main():
 
         item, score = search_knowledge(question, campus=campus, stage=stage)
 
-        matched = item is not None and score >= 3
+        # matched = item is not None and score >= 3
+        matched = item is not None and score >= MATCH_THRESHOLD
         if matched:
             matched_count += 1
 
