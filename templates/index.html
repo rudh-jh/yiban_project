@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>易启航｜大连海洋大学新生适应智能体</title>
+    <style>
+        :root {
+            --brand: #0f3f8c;
+            --brand-2: #1f5db8;
+            --brand-soft: #eaf2ff;
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #dbe4f0;
+            --ok: #0f766e;
+            --shadow: 0 10px 24px rgba(15, 63, 140, 0.08);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top right, rgba(31, 93, 184, 0.08), transparent 26%),
+                linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 28px 18px 40px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0f3f8c 0%, #1f5db8 55%, #3f7ee0 100%);
+            color: #fff;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 16px 36px rgba(15, 63, 140, 0.22);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -60px;
+            width: 220px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-wrap {
+            width: 76px;
+            height: 76px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            backdrop-filter: blur(6px);
+        }
+
+        .logo-wrap img {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+        }
+
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: 32px;
+            line-height: 1.2;
+        }
+
+        .hero .subtitle {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .hero-tags {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-tag {
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+        }
+
+        .grid {
+            margin-top: 22px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(219, 228, 240, 0.8);
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 20px;
+            color: var(--brand);
+        }
+
+        .section-desc {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #243b63;
+        }
+
+        select, input, button {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            font-size: 15px;
+            background: #fff;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #7ba7f2;
+            box-shadow: 0 0 0 4px rgba(31, 93, 184, 0.08);
+        }
+
+        button {
+            border: none;
+            background: linear-gradient(90deg, var(--brand) 0%, var(--brand-2) 100%);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 8px 18px rgba(31, 93, 184, 0.18);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .quick-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .quick-btn {
+            border: 1px solid #cfe0ff;
+            background: #f7fbff;
+            color: var(--brand);
+            border-radius: 999px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s ease;
+        }
+
+        .quick-btn:hover {
+            background: var(--brand-soft);
+        }
+
+        .stat-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .stat-box {
+            padding: 14px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+            border: 1px solid #dbe7fb;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--brand);
+        }
+
+        .result-empty {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .result-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 6px 10px;
+            background: #eef3ff;
+            color: #284a99;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .result-block {
+            background: #f9fbff;
+            border: 1px solid #e3ebf8;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .result-block.full {
+            grid-column: 1 / -1;
+        }
+
+        .result-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #223b6a;
+            margin-bottom: 8px;
+        }
+
+        .result-content {
+            font-size: 14px;
+            line-height: 1.75;
+            color: #253147;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .source-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: var(--brand-2);
+            text-decoration: none;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 26px;
+            }
+
+            .hero-top {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <section class="hero">
+        <div class="hero-top">
+            <div class="logo-wrap">
+                <img src="/static/img/dlou.png" alt="大连海洋大学校徽">
+            </div>
+            <div>
+                <h1>易启航：大连海洋大学新生适应智能体</h1>
+                <p class="subtitle">
+                    面向新生入学前、报到当天、第一周与第一个月的校本知识问答原型。<br>
+                    结合校区、阶段与知识库检索，提供流程说明、官方入口和注意事项。
+                </p>
+            </div>
+        </div>
+        <div class="hero-tags">
+            <span class="hero-tag">大连海洋大学</span>
+            <span class="hero-tag">海纳百川 · 行稳致远</span>
+            <span class="hero-tag">多校区适应支持</span>
+<!--            <span class="hero-tag">知识库驱动 MVP</span>-->
+        </div>
+    </section>
+
+    <div class="grid">
+        <section class="card">
+            <h2 class="section-title">开始提问</h2>
+            <p class="section-desc">
+                先选择校区和阶段，再输入问题。当前版本优先支持校园卡、校园网、心理咨询等高确定性场景。
+            </p>
+
+            <div class="row">
+                <div class="field">
+                    <label class="label" for="campus">校区</label>
+                    <select id="campus">
+                        {% for campus in campuses %}
+                        <option value="{{ campus }}">{{ campus if campus else "不限" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="label" for="stage">阶段</label>
+                    <select id="stage">
+                        {% for stage in stages %}
+                        <option value="{{ stage }}">{{ stage if stage else "不限" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field" style="flex: 2;">
+                    <label class="label" for="question">输入问题</label>
+                    <input id="question" type="text" placeholder="例如：心理咨询怎么预约？" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <button onclick="askQuestion()">提交问题</button>
+                </div>
+            </div>
+
+            <div class="label" style="margin-top: 18px;">快捷问题</div>
+            <div class="quick-list">
+                <button class="quick-btn" onclick="fillQuestion('校园卡怎么绑定')">校园卡怎么绑定</button>
+                <button class="quick-btn" onclick="fillQuestion('校园卡初始密码是什么')">校园卡初始密码</button>
+                <button class="quick-btn" onclick="fillQuestion('校园网账号是什么')">校园网账号</button>
+                <button class="quick-btn" onclick="fillQuestion('心理咨询怎么预约')">心理咨询预约</button>
+                <button class="quick-btn" onclick="fillQuestion('黑石礁校区心理预约电话是多少')">黑石礁心理电话</button>
+                <button class="quick-btn" onclick="fillQuestion('晚上情绪不好可以找谁')">情绪危机求助</button>
+            </div>
+        </section>
+
+        <aside class="card">
+            <h2 class="section-title">当前原型状态</h2>
+            <p class="section-desc">
+                这一步的目标是先把“Excel → 检索 → 回答 → 展示”跑通，形成可演示版本。
+            </p>
+            <div class="stat-list">
+                <div class="stat-box">
+                    <div class="stat-label">知识条目</div>
+                    <div class="stat-value">{{ kb_count }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">当前阶段</div>
+                    <div class="stat-value" style="font-size:18px;">MVP</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">检索方式</div>
+                    <div class="stat-value" style="font-size:18px;">规则匹配</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">适配方向</div>
+                    <div class="stat-value" style="font-size:18px;">校本场景</div>
+                </div>
+            </div>
+            <div class="footer-note">
+                建议演示时优先提问：校园卡绑定、校园网账号、心理预约、心理热线等问题。这些场景公开信息明确，稳定性更好。
+            </div>
+        </aside>
+    </div>
+
+    <section class="card" id="result">
+        <h2 class="section-title">检索结果</h2>
+        <div class="result-empty">这里会显示匹配到的知识条目、来源和办理信息。</div>
+    </section>
+</div>
+
+<script>
+function fillQuestion(text) {
+    document.getElementById("question").value = text;
+}
+
+async function askQuestion() {
+    const question = document.getElementById("question").value.trim();
+    const campus = document.getElementById("campus").value;
+    const stage = document.getElementById("stage").value;
+    const resultEl = document.getElementById("result");
+
+    if (!question) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">检索结果</h2>
+            <div class="result-empty">请先输入问题。</div>
+        `;
+        return;
+    }
+
+    resultEl.innerHTML = `
+        <h2 class="section-title">检索结果</h2>
+        <div class="result-empty">正在匹配校本知识条目，请稍候...</div>
+    `;
+
+    try {
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({question, campus, stage})
+        });
+
+        const data = await response.json();
+
+        if (!data.matched) {
+            resultEl.innerHTML = `
+                <h2 class="section-title">检索结果</h2>
+                <div class="result-block full">
+                    <div class="result-title">未命中知识条目</div>
+                    <div class="result-content">${data.message || "暂未找到匹配结果。"}</div>
+                </div>
+                <div class="result-block full" style="margin-top:14px;">
+                    <div class="result-title">建议</div>
+                    <div class="result-content">请尝试更具体的问法，例如“校园卡怎么绑定”“心理咨询怎么预约”；若涉及当年安排，请以学校最新通知为准。</div>
+                </div>
+            `;
+            return;
+        }
+
+        resultEl.innerHTML = `
+            <h2 class="section-title">检索结果</h2>
+
+            <div class="result-top">
+                <span class="badge">知识ID：${data.item_id || "-"}</span>
+                <span class="badge">匹配分：${data.score || "-"}</span>
+                <span class="badge">${data.category_1 || "-"}</span>
+                <span class="badge">${data.category_2 || "-"}</span>
+            </div>
+
+            <div class="result-grid">
+                <div class="result-block full">
+                    <div class="result-title">标准问题</div>
+                    <div class="result-content">${data.standard_question || "-"}</div>
+                </div>
+
+                <div class="result-block full">
+                    <div class="result-title">标准答案</div>
+                    <div class="result-content">${data.answer || "-"}</div>
+                </div>
+
+                <div class="result-block full">
+                    <div class="result-title">办理步骤</div>
+                    <div class="result-content">${data.steps || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">适用校区 / 阶段</div>
+                    <div class="result-content">${data.campus || "-"} / ${data.stage || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">是否需要人工确认</div>
+                    <div class="result-content">${data.need_manual_confirm || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">官方入口 / 页面</div>
+                    <div class="result-content">${data.official_page || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">联系方式</div>
+                    <div class="result-content">${data.contact || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">所需材料</div>
+                    <div class="result-content">${data.materials || "-"}</div>
+                </div>
+
+                <div class="result-block">
+                    <div class="result-title">注意事项</div>
+                    <div class="result-content">${data.notice || "-"}</div>
+                </div>
+
+                <div class="result-block full">
+                    <div class="result-title">来源</div>
+                    <div class="result-content">${data.source_title || "-"}</div>
+                    ${data.source_link ? `<a class="source-link" href="${data.source_link}" target="_blank">查看来源页面</a>` : ""}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">检索结果</h2>
+            <div class="result-block full">
+                <div class="result-title">请求失败</div>
+                <div class="result-content">${error}</div>
+            </div>
+        `;
+    }
+}
+</script>
+</body>
+</html>
