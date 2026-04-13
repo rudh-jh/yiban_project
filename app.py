@@ -19,11 +19,13 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
+DATA_FILE_NAME = "dlou_freshman_agent_knowledge_base_v2.xlsx"
+
 def find_excel_file() -> Path:
-    xlsx_files = list(DATA_DIR.glob("*.xlsx"))
-    if not xlsx_files:
-        raise FileNotFoundError("data 文件夹下没有找到 .xlsx 文件")
-    return xlsx_files[0]
+    excel_path = DATA_DIR / DATA_FILE_NAME
+    if not excel_path.exists():
+        raise FileNotFoundError(f"未找到数据文件: {excel_path}")
+    return excel_path
 
 
 def normalize_text(value: Any) -> str:
@@ -283,4 +285,9 @@ async def ask(request: Request):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "kb_count": len(KB)}
+    return {
+        "status": "ok",
+        "kb_count": len(KB),
+        "data_file": str(find_excel_file().name),
+        "match_threshold": MATCH_THRESHOLD,
+    }
