@@ -312,6 +312,21 @@
             line-height: 1.7;
         }
 
+        .llm-answer {
+            white-space: pre-wrap;
+            line-height: 1.85;
+        }
+
+        .source-list {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .source-list li {
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+
         @media (max-width: 900px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -350,7 +365,6 @@
             <span class="hero-tag">大连海洋大学</span>
             <span class="hero-tag">海纳百川 · 行稳致远</span>
             <span class="hero-tag">多校区适应支持</span>
-<!--            <span class="hero-tag">知识库驱动 MVP</span>-->
         </div>
     </section>
 
@@ -388,8 +402,14 @@
             </div>
 
             <div class="row">
+<!--                <div class="field">-->
+<!--                    <button onclick="askQuestion()">规则回答</button>-->
+<!--                </div>-->
+<!--                <div class="field">-->
+<!--                    <button onclick="askQuestionLLM()">智能体回答</button>-->
+<!--                </div>-->
                 <div class="field">
-                    <button onclick="askQuestion()">提交问题</button>
+                    <button onclick="askSmart()">提交问题</button>
                 </div>
             </div>
 
@@ -444,6 +464,110 @@ function fillQuestion(text) {
     document.getElementById("question").value = text;
 }
 
+function fillQuestion(text) {
+    document.getElementById("question").value = text;
+}
+
+function escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+async function askSmart() {
+    const question = document.getElementById("question").value.trim();
+    const campus = document.getElementById("campus").value;
+    const stage = document.getElementById("stage").value;
+    const resultEl = document.getElementById("result");
+
+    if (!question) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+            <div class="result-empty">请先输入问题。</div>
+        `;
+        return;
+    }
+
+    resultEl.innerHTML = `
+        <h2 class="section-title">智能体回答</h2>
+        <div class="result-empty">正在检索校本知识并生成回答，请稍候...</div>
+    `;
+
+    try {
+        const response = await fetch("/ask_smart", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ question, campus, stage })
+        });
+
+        const data = await response.json();
+
+        if (!data.matched) {
+            resultEl.innerHTML = `
+                <h2 class="section-title">智能体回答</h2>
+                <div class="result-block full">
+                    <div class="result-title">未返回结果</div>
+                    <div class="result-content">${escapeHtml(data.message || "当前未找到匹配内容。")}</div>
+                </div>
+            `;
+            return;
+        }
+
+        const sourceHtml = (data.sources || []).map(s => `
+            <li>
+                <strong>${escapeHtml(s.standard_question || "-")}</strong><br/>
+                ${escapeHtml(s.title || "-")}<br/>
+                ${s.link ? `<a class="source-link" href="${escapeHtml(s.link)}" target="_blank">查看来源</a>` : ""}
+            </li>
+        `).join("");
+
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+
+            <div class="result-top">
+                <span class="badge">模式：融合回答</span>
+                <span class="badge">回答来源：校本知识库 + 大模型整理</span>
+                ${data.top_score ? `<span class="badge">Top分数：${escapeHtml(data.top_score)}</span>` : ""}
+                ${data.fallback_mode ? `<span class="badge">回退模式：${escapeHtml(data.fallback_mode)}</span>` : ""}
+            </div>
+
+            <div class="result-block full">
+                <div class="result-title">回答内容</div>
+                <div class="result-content llm-answer">${escapeHtml(data.answer || "-")}</div>
+            </div>
+
+            <div class="result-block full" style="margin-top:14px;">
+                <div class="result-title">参考知识来源</div>
+                <div class="result-content">
+                    <ul class="source-list">${sourceHtml}</ul>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+            <div class="result-block full">
+                <div class="result-title">调用失败</div>
+                <div class="result-content">${escapeHtml(error)}</div>
+            </div>
+        `;
+    }
+}
+
+function escapeHtml(text) {
+    if (text === null || text === undefined) return "";
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 async function askQuestion() {
     const question = document.getElementById("question").value.trim();
     const campus = document.getElementById("campus").value;
@@ -477,7 +601,7 @@ async function askQuestion() {
                 <h2 class="section-title">检索结果</h2>
                 <div class="result-block full">
                     <div class="result-title">未命中知识条目</div>
-                    <div class="result-content">${data.message || "暂未找到匹配结果。"}</div>
+                    <div class="result-content">${escapeHtml(data.message || "暂未找到匹配结果。")}</div>
                 </div>
                 <div class="result-block full" style="margin-top:14px;">
                     <div class="result-title">建议</div>
@@ -491,62 +615,63 @@ async function askQuestion() {
             <h2 class="section-title">检索结果</h2>
 
             <div class="result-top">
-                <span class="badge">知识ID：${data.item_id || "-"}</span>
-                <span class="badge">匹配分：${data.score || "-"}</span>
-                <span class="badge">${data.category_1 || "-"}</span>
-                <span class="badge">${data.category_2 || "-"}</span>
+                <span class="badge">模式：规则回答</span>
+                <span class="badge">知识ID：${escapeHtml(data.item_id || "-")}</span>
+                <span class="badge">匹配分：${escapeHtml(data.score || "-")}</span>
+                <span class="badge">${escapeHtml(data.category_1 || "-")}</span>
+                <span class="badge">${escapeHtml(data.category_2 || "-")}</span>
             </div>
 
             <div class="result-grid">
                 <div class="result-block full">
                     <div class="result-title">标准问题</div>
-                    <div class="result-content">${data.standard_question || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.standard_question || "-")}</div>
                 </div>
 
                 <div class="result-block full">
                     <div class="result-title">标准答案</div>
-                    <div class="result-content">${data.answer || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.answer || "-")}</div>
                 </div>
 
                 <div class="result-block full">
                     <div class="result-title">办理步骤</div>
-                    <div class="result-content">${data.steps || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.steps || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">适用校区 / 阶段</div>
-                    <div class="result-content">${data.campus || "-"} / ${data.stage || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.campus || "-")} / ${escapeHtml(data.stage || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">是否需要人工确认</div>
-                    <div class="result-content">${data.need_manual_confirm || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.need_manual_confirm || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">官方入口 / 页面</div>
-                    <div class="result-content">${data.official_page || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.official_page || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">联系方式</div>
-                    <div class="result-content">${data.contact || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.contact || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">所需材料</div>
-                    <div class="result-content">${data.materials || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.materials || "-")}</div>
                 </div>
 
                 <div class="result-block">
                     <div class="result-title">注意事项</div>
-                    <div class="result-content">${data.notice || "-"}</div>
+                    <div class="result-content">${escapeHtml(data.notice || "-")}</div>
                 </div>
 
                 <div class="result-block full">
                     <div class="result-title">来源</div>
-                    <div class="result-content">${data.source_title || "-"}</div>
-                    ${data.source_link ? `<a class="source-link" href="${data.source_link}" target="_blank">查看来源页面</a>` : ""}
+                    <div class="result-content">${escapeHtml(data.source_title || "-")}</div>
+                    ${data.source_link ? `<a class="source-link" href="${escapeHtml(data.source_link)}" target="_blank">查看来源页面</a>` : ""}
                 </div>
             </div>
         `;
@@ -555,7 +680,85 @@ async function askQuestion() {
             <h2 class="section-title">检索结果</h2>
             <div class="result-block full">
                 <div class="result-title">请求失败</div>
-                <div class="result-content">${error}</div>
+                <div class="result-content">${escapeHtml(error)}</div>
+            </div>
+        `;
+    }
+}
+
+async function askQuestionLLM() {
+    const question = document.getElementById("question").value.trim();
+    const campus = document.getElementById("campus").value;
+    const stage = document.getElementById("stage").value;
+    const resultEl = document.getElementById("result");
+
+    if (!question) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+            <div class="result-empty">请先输入问题。</div>
+        `;
+        return;
+    }
+
+    resultEl.innerHTML = `
+        <h2 class="section-title">智能体回答</h2>
+        <div class="result-empty">正在检索知识并调用大模型，请稍候...</div>
+    `;
+
+    try {
+        const response = await fetch("/ask_llm", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ question, campus, stage })
+        });
+
+        const data = await response.json();
+
+        if (!data.matched) {
+            resultEl.innerHTML = `
+                <h2 class="section-title">智能体回答</h2>
+                <div class="result-block full">
+                    <div class="result-title">未返回结果</div>
+                    <div class="result-content">${escapeHtml(data.message || "未找到匹配答案。")}</div>
+                </div>
+            `;
+            return;
+        }
+
+        const sourceHtml = (data.sources || []).map(s => `
+            <li>
+                <strong>${escapeHtml(s.standard_question || "-")}</strong><br/>
+                ${escapeHtml(s.title || "-")}<br/>
+                ${s.link ? `<a class="source-link" href="${escapeHtml(s.link)}" target="_blank">查看来源</a>` : ""}
+            </li>
+        `).join("");
+
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+
+            <div class="result-top">
+                <span class="badge">模式：大模型增强</span>
+                <span class="badge">Top分数：${escapeHtml(data.top_score || "-")}</span>
+            </div>
+
+            <div class="result-block full">
+                <div class="result-title">回答内容</div>
+                <div class="result-content llm-answer">${escapeHtml(data.answer || "-")}</div>
+            </div>
+
+            <div class="result-block full" style="margin-top:14px;">
+                <div class="result-title">参考知识来源</div>
+                <div class="result-content">
+                    <ul class="source-list">${sourceHtml}</ul>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        resultEl.innerHTML = `
+            <h2 class="section-title">智能体回答</h2>
+            <div class="result-block full">
+                <div class="result-title">调用失败</div>
+                <div class="result-content">${escapeHtml(error)}</div>
             </div>
         `;
     }

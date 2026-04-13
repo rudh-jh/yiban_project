@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from fastapi.staticfiles import StaticFiles
+from services.llm_service import generate_grounded_answer
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -209,6 +210,31 @@ def search_knowledge(question: str, campus: str = "", stage: str = "") -> tuple[
 
     return best_item, best_score
 
+def search_knowledge_topk(
+    question: str,
+    campus: str = "",
+    stage: str = "",
+    k: int = 3,
+    min_score: float | None = None,
+) -> list[dict]:
+    candidates = [item for item in KB if match_campus(item, campus) and match_stage(item, stage)]
+
+    if not candidates:
+        candidates = KB
+
+    scored = []
+    for item in candidates:
+        s = score_item(question, item)
+        item_copy = item.copy()
+        item_copy["_score"] = s
+        scored.append(item_copy)
+
+    scored.sort(key=lambda x: x["_score"], reverse=True)
+
+    if min_score is None:
+        min_score = MATCH_THRESHOLD
+
+    return [item for item in scored if item["_score"] >= min_score][:k]
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -282,6 +308,180 @@ async def ask(request: Request):
         "source_link": item.get("来源链接", ""),
     }
 
+@app.post("/ask_llm")
+async def ask_llm(request: Request):
+    data = await request.json()
+    question = str(data.get("question", "")).strip()
+    campus = str(data.get("campus", "")).strip()
+    stage = str(data.get("stage", "")).strip()
+
+    if not question:
+        return JSONResponse(
+            {"matched": False, "message": "请输入问题。"},
+            status_code=400,
+        )
+
+    top_items = search_knowledge_topk(
+        question=question,
+        campus=campus,
+        stage=stage,
+        k=3,
+        min_score=max(MATCH_THRESHOLD - 0.5, 4.0),
+    )
+
+    if not top_items:
+        return {
+            "matched": False,
+            "message": "当前知识库未覆盖该问题，建议换一种问法，或以学校最新通知为准。",
+            "mode": "llm_rag",
+        }
+
+    try:
+        llm_answer = generate_grounded_answer(
+            question=question,
+            campus=campus,
+            stage=stage,
+            items=top_items,
+        )
+    except Exception as e:
+        return {
+            "matched": False,
+            "message": f"大模型调用失败：{e}",
+            "mode": "llm_rag",
+        }
+
+    return {
+        "matched": True,
+        "mode": "llm_rag",
+        "answer": llm_answer,
+        "top_score": round(top_items[0].get("_score", 0), 2),
+        "sources": [
+            {
+                "id": item.get("id", ""),
+                "title": item.get("来源标题", ""),
+                "link": item.get("来源链接", ""),
+                "standard_question": item.get("标准问题", ""),
+            }
+            for item in top_items
+        ],
+    }
+
+@app.post("/ask_smart")
+async def ask_smart(request: Request):
+    data = await request.json()
+    question = str(data.get("question", "")).strip()
+    campus = str(data.get("campus", "")).strip()
+    stage = str(data.get("stage", "")).strip()
+
+    if not question:
+        return JSONResponse(
+            {"matched": False, "message": "请输入问题。"},
+            status_code=400,
+        )
+
+    top_items = search_knowledge_topk(
+        question=question,
+        campus=campus,
+        stage=stage,
+        k=3,
+        min_score=max(MATCH_THRESHOLD - 0.5, 4.0),
+    )
+
+    if not top_items:
+        return {
+            "matched": False,
+            "message": "当前知识库未覆盖该问题，建议换一种更具体的问法，或以学校最新通知为准。",
+            "mode": "smart",
+        }
+
+    best_item = top_items[0]
+    top_score = round(best_item.get("_score", 0), 2)
+
+    try:
+        llm_answer = generate_grounded_answer(
+            question=question,
+            campus=campus,
+            stage=stage,
+            items=top_items,
+        )
+
+        # 如果明明高分命中，但模型仍然说“未覆盖”，则强制回退到规则答案
+        if top_score >= 10 and ("未覆盖" in llm_answer or "以学校最新通知为准" in llm_answer):
+            fallback_answer = f"""【简要回答】
+{best_item.get("标准答案", "当前未找到标准答案。")}
+
+【办理步骤】
+{best_item.get("办理步骤", "请参考学校官方说明。")}
+
+【注意事项】
+{best_item.get("注意事项", "如信息有变化，请以学校最新通知为准。")}
+
+【来源说明】
+{best_item.get("来源标题", "校本知识库条目")}
+"""
+            return {
+                "matched": True,
+                "mode": "smart",
+                "fallback_mode": "high_score_rule_fallback",
+                "answer": fallback_answer,
+                "top_score": top_score,
+                "sources": [
+                    {
+                        "id": item.get("id", ""),
+                        "title": item.get("来源标题", ""),
+                        "link": item.get("来源链接", ""),
+                        "standard_question": item.get("标准问题", ""),
+                    }
+                    for item in top_items
+                ],
+            }
+
+        return {
+            "matched": True,
+            "mode": "smart",
+            "answer": llm_answer,
+            "top_score": top_score,
+            "sources": [
+                {
+                    "id": item.get("id", ""),
+                    "title": item.get("来源标题", ""),
+                    "link": item.get("来源链接", ""),
+                    "standard_question": item.get("标准问题", ""),
+                }
+                for item in top_items
+            ],
+        }
+
+    except Exception:
+        fallback_answer = f"""【简要回答】
+{best_item.get("标准答案", "当前未找到标准答案。")}
+
+【办理步骤】
+{best_item.get("办理步骤", "请参考学校官方说明。")}
+
+【注意事项】
+{best_item.get("注意事项", "如信息有变化，请以学校最新通知为准。")}
+
+【来源说明】
+{best_item.get("来源标题", "校本知识库条目")}
+"""
+
+        return {
+            "matched": True,
+            "mode": "smart",
+            "fallback_mode": "rule_based",
+            "answer": fallback_answer,
+            "top_score": top_score,
+            "sources": [
+                {
+                    "id": item.get("id", ""),
+                    "title": item.get("来源标题", ""),
+                    "link": item.get("来源链接", ""),
+                    "standard_question": item.get("标准问题", ""),
+                }
+                for item in top_items
+            ],
+        }
 
 @app.get("/health")
 async def health():
